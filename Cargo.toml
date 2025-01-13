@@ -1,7 +1,11 @@
 [package]
 name = "vereinsflieger"
-version = "0.1.0"
+version = "0.0.0"
+description = "A Vereinsflieger API client for Rust based on the `reqwest` crate"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Turbo87/vereinsflieger-rs"
+exclude = ["docs/*", "examples/*", ".gitignore"]
 
 [dependencies]
 reqwest = { version = "0.12.12", features = ["json"] }
