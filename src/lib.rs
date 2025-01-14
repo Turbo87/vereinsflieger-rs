@@ -1,4 +1,6 @@
-use md5::{Digest, Md5};
+mod md5;
+
+use md5::serialize_md5;
 
 pub struct NoAccessToken;
 pub struct AccessToken(String);
@@ -119,15 +121,4 @@ pub struct Credentials<'a> {
 
     /// Zwei-Faktor-Authentifizierung
     pub auth_secret: Option<&'a str>,
-}
-
-fn serialize_md5<S>(input: &str, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    let mut hasher = Md5::new();
-    hasher.update(input.as_bytes());
-    let result = hasher.finalize();
-
-    serializer.serialize_str(&format!("{:x}", result))
 }
