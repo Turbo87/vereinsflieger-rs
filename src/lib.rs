@@ -1,7 +1,9 @@
+mod article;
 mod md5;
 mod sale;
 mod user;
 
+pub use article::Article;
 use md5::serialize_md5;
 pub use sale::NewSale;
 pub use user::User;
@@ -106,6 +108,28 @@ impl Client<Authenticated> {
         let response = self
             .client
             .post("https://www.vereinsflieger.de/interface/rest/user/list")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(serde_urlencoded::to_string(params).unwrap())
+            .send()
+            .await?
+            .error_for_status()?;
+
+        response
+            .json::<serde_json::Map<String, serde_json::Value>>()
+            .await?
+            .into_iter()
+            .filter(|(k, _)| k.parse::<usize>().is_ok())
+            .map(|(_, v)| serde_path_to_error::deserialize(v))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
+
+    pub async fn list_articles(&self) -> anyhow::Result<Vec<Article>> {
+        let params = self.with_access_token(&());
+
+        let response = self
+            .client
+            .post("https://www.vereinsflieger.de/interface/rest/articles/list")
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(serde_urlencoded::to_string(params).unwrap())
             .send()
