@@ -1,6 +1,8 @@
 mod md5;
+mod user;
 
 use md5::serialize_md5;
+pub use user::User;
 
 pub struct NoAccessToken;
 pub struct AccessToken(String);
@@ -24,7 +26,7 @@ impl Client<NoAccessToken> {
         Self { client, state }
     }
 
-    async fn get_access_token(self) -> Result<Client<AccessToken>, reqwest::Error> {
+    async fn get_access_token(self) -> anyhow::Result<Client<AccessToken>> {
         #[derive(Debug, serde::Deserialize)]
         struct Response {
             #[serde(rename = "accesstoken")]
@@ -46,7 +48,7 @@ impl Client<NoAccessToken> {
 }
 
 impl Client<AccessToken> {
-    pub async fn new_unauthenticated() -> Result<Self, reqwest::Error> {
+    pub async fn new_unauthenticated() -> anyhow::Result<Self> {
         Client::new_without_access_token().get_access_token().await
     }
 
@@ -57,7 +59,7 @@ impl Client<AccessToken> {
     pub async fn authenticate(
         self,
         params: &Credentials<'_>,
-    ) -> Result<Client<Authenticated>, reqwest::Error> {
+    ) -> anyhow::Result<Client<Authenticated>> {
         let params = WithAccessToken {
             access_token: self.access_token(),
             params,
@@ -78,7 +80,7 @@ impl Client<AccessToken> {
 }
 
 impl Client<Authenticated> {
-    pub async fn new(params: &Credentials<'_>) -> Result<Self, reqwest::Error> {
+    pub async fn new(params: &Credentials<'_>) -> anyhow::Result<Self> {
         Client::new_unauthenticated()
             .await?
             .authenticate(params)
@@ -87,6 +89,35 @@ impl Client<Authenticated> {
 
     pub fn access_token(&self) -> &str {
         &self.state.0 .0
+    }
+
+    fn with_access_token<'a, T>(&'a self, params: &'a T) -> WithAccessToken<'a, T> {
+        WithAccessToken {
+            access_token: self.access_token(),
+            params,
+        }
+    }
+
+    pub async fn list_users(self) -> anyhow::Result<Vec<User>> {
+        let params = self.with_access_token(&());
+
+        let response = self
+            .client
+            .post("https://www.vereinsflieger.de/interface/rest/user/list")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(serde_urlencoded::to_string(params).unwrap())
+            .send()
+            .await?
+            .error_for_status()?;
+
+        response
+            .json::<serde_json::Map<String, serde_json::Value>>()
+            .await?
+            .into_iter()
+            .filter(|(k, _)| k.parse::<usize>().is_ok())
+            .map(|(_, v)| serde_path_to_error::deserialize(v))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(Into::into)
     }
 }
 

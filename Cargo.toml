@@ -8,9 +8,12 @@ repository = "https://github.com/Turbo87/vereinsflieger-rs"
 exclude = ["docs/*", "examples/*", ".gitignore"]
 
 [dependencies]
+anyhow = "1.0.95"
 md-5 = "0.10.6"
 reqwest = { version = "0.12.12", features = ["json"] }
 serde = { version = "1.0.217", features = ["derive"] }
+serde_json = { version = "1.0.135", features = ["preserve_order"] }
+serde_path_to_error = "0.1.16"
 serde_urlencoded = "0.7.1"
 
 [dev-dependencies]
