@@ -98,7 +98,7 @@ impl Client<Authenticated> {
         }
     }
 
-    pub async fn list_users(self) -> anyhow::Result<Vec<User>> {
+    pub async fn list_users(&self) -> anyhow::Result<Vec<User>> {
         let params = self.with_access_token(&());
 
         let response = self
