@@ -20,3 +20,9 @@ serde_urlencoded = "0.7.1"
 anyhow = "=1.0.95"
 clap = { version = "=4.5.26", features = ["derive"] }
 tokio = { version = "=1.43.0", features = ["full"] }
+
+[package.metadata.release]
+sign-commit = true
+sign-tag = true
+pre-release-commit-message = "Release v{{version}}"
+tag-message = ""
