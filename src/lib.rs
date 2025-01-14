@@ -44,7 +44,7 @@ impl Client<NoAccessToken> {
 }
 
 impl Client<AccessToken> {
-    pub async fn new() -> Result<Self, reqwest::Error> {
+    pub async fn new_unauthenticated() -> Result<Self, reqwest::Error> {
         Client::new_without_access_token().get_access_token().await
     }
 
@@ -52,53 +52,82 @@ impl Client<AccessToken> {
         &self.state.0
     }
 
-    pub async fn sign_in(
+    pub async fn authenticate(
         self,
-        club_id: u32,
-        username: &str,
-        password: &str,
-        app_key: &str,
+        params: &Credentials<'_>,
     ) -> Result<Client<Authenticated>, reqwest::Error> {
-        let hashed_password = md5(password);
+        let params = WithAccessToken {
+            access_token: self.access_token(),
+            params,
+        };
 
-        let url = "https://www.vereinsflieger.de/interface/rest/auth/signin";
-        let mut url = reqwest::Url::parse(url).unwrap();
-
-        url.query_pairs_mut()
-            .append_pair("accesstoken", self.access_token())
-            .append_pair("cid", &club_id.to_string())
-            .append_pair("appkey", app_key)
-            .append_pair("username", username)
-            .append_pair("password", &hashed_password);
-
-        let query = url.query().unwrap().to_string();
-
-        url.set_query(None);
-
-        let client = self.client;
-
-        client
-            .post(url)
+        self.client
+            .post("https://www.vereinsflieger.de/interface/rest/auth/signin")
             .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(query)
+            .body(serde_urlencoded::to_string(params).unwrap())
             .send()
             .await?
             .error_for_status()?;
 
+        let client = self.client;
         let state = Authenticated(self.state);
         Ok(Client { client, state })
     }
 }
 
 impl Client<Authenticated> {
+    pub async fn new(params: &Credentials<'_>) -> Result<Self, reqwest::Error> {
+        Client::new_unauthenticated()
+            .await?
+            .authenticate(params)
+            .await
+    }
+
     pub fn access_token(&self) -> &str {
         &self.state.0 .0
     }
 }
 
-fn md5(input: &str) -> String {
+#[derive(serde::Serialize)]
+struct WithAccessToken<'a, T> {
+    #[serde(rename = "accesstoken")]
+    access_token: &'a str,
+
+    #[serde(flatten)]
+    params: &'a T,
+}
+
+#[derive(serde::Serialize)]
+pub struct Credentials<'a> {
+    /// Eindeutige Nummer des Vereins
+    ///
+    /// Hinweis: Die eindeutige cid wird nur benötigt, wenn der Benutzer in
+    // mehreren Vereinen existiert.
+    #[serde(rename = "cid")]
+    pub club_id: Option<u32>,
+
+    /// Eindeutiger Applikationsschlüssel
+    #[serde(rename = "appkey")]
+    pub app_key: &'a str,
+
+    /// Benuztername oder E-Mail-Adresse
+    pub username: &'a str,
+
+    /// Passwort
+    #[serde(serialize_with = "serialize_md5")]
+    pub password: &'a str,
+
+    /// Zwei-Faktor-Authentifizierung
+    pub auth_secret: Option<&'a str>,
+}
+
+fn serialize_md5<S>(input: &str, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
     let mut hasher = Md5::new();
     hasher.update(input.as_bytes());
     let result = hasher.finalize();
-    format!("{:x}", result)
+
+    serializer.serialize_str(&format!("{:x}", result))
 }

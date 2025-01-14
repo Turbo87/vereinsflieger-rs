@@ -11,6 +11,7 @@ exclude = ["docs/*", "examples/*", ".gitignore"]
 md-5 = "0.10.6"
 reqwest = { version = "0.12.12", features = ["json"] }
 serde = { version = "1.0.217", features = ["derive"] }
+serde_urlencoded = "0.7.1"
 
 [dev-dependencies]
 anyhow = "=1.0.95"
