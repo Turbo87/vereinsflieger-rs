@@ -1,3 +1,23 @@
+use crate::WithAccessToken;
+
+pub async fn add_sale(
+    client: &reqwest::Client,
+    access_token: &str,
+    new_sale: &NewSale<'_>,
+) -> anyhow::Result<()> {
+    let params = WithAccessToken::new(access_token, new_sale);
+
+    client
+        .post("https://www.vereinsflieger.de/interface/rest/sale/add")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(serde_urlencoded::to_string(params).unwrap())
+        .send()
+        .await?
+        .error_for_status()?;
+
+    Ok(())
+}
+
 #[derive(Debug, serde::Serialize)]
 pub struct NewSale<'a> {
     /// Datum der Buchung (`YYYY-mm-dd`)

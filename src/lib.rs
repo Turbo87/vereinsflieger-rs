@@ -5,7 +5,7 @@ mod user;
 
 pub use article::{list_articles, Article};
 use md5::serialize_md5;
-pub use sale::NewSale;
+pub use sale::{add_sale, NewSale};
 pub use user::{list_users, User};
 
 pub struct NoAccessToken;
@@ -108,17 +108,7 @@ impl Client<Authenticated> {
     }
 
     pub async fn add_sale(&self, new_sale: &NewSale<'_>) -> anyhow::Result<()> {
-        let params = self.with_access_token(new_sale);
-
-        self.client
-            .post("https://www.vereinsflieger.de/interface/rest/sale/add")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(serde_urlencoded::to_string(params).unwrap())
-            .send()
-            .await?
-            .error_for_status()?;
-
-        Ok(())
+        add_sale(&self.client, self.access_token(), new_sale).await
     }
 }
 
