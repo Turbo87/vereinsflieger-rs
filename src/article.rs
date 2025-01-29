@@ -1,25 +1,27 @@
+use crate::error::error_for_status;
 use crate::WithAccessToken;
 
 pub async fn list_articles(
     client: &reqwest::Client,
     access_token: &str,
-) -> anyhow::Result<Vec<Article>> {
+) -> crate::Result<Vec<Article>> {
     let params = WithAccessToken::new(access_token, &());
 
     let response = client
         .post("https://www.vereinsflieger.de/interface/rest/articles/list")
         .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(serde_urlencoded::to_string(params).unwrap())
+        .body(serde_urlencoded::to_string(params)?)
         .send()
-        .await?
-        .error_for_status()?;
+        .await?;
 
-    response
-        .json::<serde_json::Map<String, serde_json::Value>>()
-        .await?
-        .into_iter()
+    let bytes = error_for_status(response).await?.bytes().await?;
+
+    let json: serde_json::Map<String, serde_json::Value> =
+        serde_path_to_error::deserialize(&mut serde_json::Deserializer::from_slice(&bytes))?;
+
+    json.into_iter()
         .filter(|(k, _)| k.parse::<usize>().is_ok())
-        .map(|(_, v)| serde_path_to_error::deserialize(v))
+        .map(|(_, v)| serde_path_to_error::deserialize(v).map_err(crate::Error::from))
         .collect::<Result<Vec<_>, _>>()
         .map_err(Into::into)
 }

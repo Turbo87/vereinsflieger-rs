@@ -1,19 +1,21 @@
+use crate::error::error_for_status;
 use crate::WithAccessToken;
 
 pub async fn add_sale(
     client: &reqwest::Client,
     access_token: &str,
     new_sale: &NewSale<'_>,
-) -> anyhow::Result<()> {
+) -> crate::Result<()> {
     let params = WithAccessToken::new(access_token, new_sale);
 
-    client
+    let response = client
         .post("https://www.vereinsflieger.de/interface/rest/sale/add")
         .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(serde_urlencoded::to_string(params).unwrap())
+        .body(serde_urlencoded::to_string(params)?)
         .send()
-        .await?
-        .error_for_status()?;
+        .await?;
+
+    error_for_status(response).await?;
 
     Ok(())
 }

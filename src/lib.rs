@@ -1,10 +1,12 @@
 mod article;
+mod error;
 mod md5;
 mod sale;
 mod user;
 mod utils;
 
 pub use article::{list_articles, Article};
+pub use error::{Error, Result};
 use md5::serialize_md5;
 pub use sale::{add_sale, NewSale};
 use std::fmt::{Debug, Formatter};
@@ -19,7 +21,7 @@ impl AuthenticationState for NoAccessToken {}
 impl AuthenticationState for AccessToken {}
 impl AuthenticationState for Authenticated {}
 
-pub async fn get_access_token(client: &reqwest::Client) -> anyhow::Result<String> {
+pub async fn get_access_token(client: &reqwest::Client) -> Result<String> {
     #[derive(Debug, serde::Deserialize)]
     struct Response {
         #[serde(rename = "accesstoken")]
@@ -39,13 +41,13 @@ pub async fn authenticate(
     client: &reqwest::Client,
     access_token: &str,
     credentials: &Credentials<'_>,
-) -> anyhow::Result<()> {
+) -> Result<()> {
     let params = WithAccessToken::new(access_token, credentials);
 
     client
         .post("https://www.vereinsflieger.de/interface/rest/auth/signin")
         .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(serde_urlencoded::to_string(params).unwrap())
+        .body(serde_urlencoded::to_string(params)?)
         .send()
         .await?
         .error_for_status()?;
@@ -66,7 +68,7 @@ impl Client<NoAccessToken> {
         Self { client, state }
     }
 
-    async fn get_access_token(self) -> anyhow::Result<Client<AccessToken>> {
+    async fn get_access_token(self) -> Result<Client<AccessToken>> {
         let client = self.client;
         get_access_token(&client).await.map(|access_token| {
             let state = AccessToken(access_token);
@@ -76,7 +78,7 @@ impl Client<NoAccessToken> {
 }
 
 impl Client<AccessToken> {
-    pub async fn new_unauthenticated() -> anyhow::Result<Self> {
+    pub async fn new_unauthenticated() -> Result<Self> {
         Client::new_without_access_token().get_access_token().await
     }
 
@@ -84,10 +86,7 @@ impl Client<AccessToken> {
         &self.state.0
     }
 
-    pub async fn authenticate(
-        self,
-        params: &Credentials<'_>,
-    ) -> anyhow::Result<Client<Authenticated>> {
+    pub async fn authenticate(self, params: &Credentials<'_>) -> Result<Client<Authenticated>> {
         let client = self.client;
         let state = self.state;
 
@@ -100,7 +99,7 @@ impl Client<AccessToken> {
 }
 
 impl Client<Authenticated> {
-    pub async fn new(params: &Credentials<'_>) -> anyhow::Result<Self> {
+    pub async fn new(params: &Credentials<'_>) -> Result<Self> {
         Client::new_unauthenticated()
             .await?
             .authenticate(params)
@@ -111,15 +110,15 @@ impl Client<Authenticated> {
         &self.state.0 .0
     }
 
-    pub async fn list_users(&self) -> anyhow::Result<Vec<User>> {
+    pub async fn list_users(&self) -> Result<Vec<User>> {
         list_users(&self.client, self.access_token()).await
     }
 
-    pub async fn list_articles(&self) -> anyhow::Result<Vec<Article>> {
+    pub async fn list_articles(&self) -> Result<Vec<Article>> {
         list_articles(&self.client, self.access_token()).await
     }
 
-    pub async fn add_sale(&self, new_sale: &NewSale<'_>) -> anyhow::Result<()> {
+    pub async fn add_sale(&self, new_sale: &NewSale<'_>) -> Result<()> {
         add_sale(&self.client, self.access_token(), new_sale).await
     }
 }
