@@ -27,25 +27,36 @@ pub async fn list_articles(
 #[derive(Debug, serde::Deserialize)]
 pub struct Article {
     /// Artikelnr
-    #[serde(rename = "articleid")]
+    #[serde(
+        rename = "articleid",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub article_id: String,
 
     /// Artikelbeschreibung
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub designation: String,
 
     /// Artikeleinheit
-    #[serde(rename = "unittype")]
+    #[serde(
+        rename = "unittype",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub unit_type: String,
 
     /// Gebührenbereich
-    #[serde(rename = "costtype")]
+    #[serde(
+        rename = "costtype",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub cost_type: String,
 
     /// Spähre
-    #[serde(rename = "spid")]
+    #[serde(rename = "spid", deserialize_with = "crate::utils::serde::unescape")]
     pub sphere: String,
 
     /// Sachkonto
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub account: String,
 
     /// Preise

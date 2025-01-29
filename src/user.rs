@@ -27,66 +27,102 @@ pub struct User {
     #[serde(rename = "uid")]
     pub user_id: String,
     /// Titel
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub title: String,
     /// Vorname
-    #[serde(rename = "firstname")]
+    #[serde(
+        rename = "firstname",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub first_name: String,
     /// Nachname
-    #[serde(rename = "lastname")]
+    #[serde(
+        rename = "lastname",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub last_name: String,
     /// Spitzname
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub nickname: String,
     /// Geschlecht (m, w)
     pub gender: String,
 
     /// Straße
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub street: String,
     /// Postfach
-    #[serde(rename = "postofficebox")]
+    #[serde(
+        rename = "postofficebox",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub post_office_box: String,
     /// Adresszusatz
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub careof: String,
     /// Postleitzahl
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub zipcode: String,
     /// Ort
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub town: String,
     /// Land
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub country: String,
 
     /// Geburtsdatum (dd.mm.yyyy)
     pub birthday: String,
     /// Geburtsort
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub birthplace: String,
 
     /// Mailadresse
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub email: String,
     /// Telefon (privat)
-    #[serde(rename = "homenumber")]
+    #[serde(
+        rename = "homenumber",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub home_number: String,
     /// Mobil (privat)
-    #[serde(rename = "mobilenumber")]
+    #[serde(
+        rename = "mobilenumber",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub mobile_number: String,
     /// Telefon (gesch.)
-    #[serde(rename = "phonenumber")]
+    #[serde(
+        rename = "phonenumber",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub work_number: String,
     /// Mobil (gesch.)
-    #[serde(rename = "phonenumber2")]
+    #[serde(
+        rename = "phonenumber2",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub work_mobile_number: String,
 
     /// Autokennzeichen
-    #[serde(rename = "carlicenseplate")]
+    #[serde(
+        rename = "carlicenseplate",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub car_licenseplate: String,
     /// Ausweisnummer
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub identification: String,
     /// NatoID
-    #[serde(rename = "natoid")]
+    #[serde(rename = "natoid", deserialize_with = "crate::utils::serde::unescape")]
     pub nato_id: String,
     /// Führungszeugnis
     pub policecert_validto: String,
 
     /// Notfallkontakt 1
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub ice_contact1: String,
     /// Notfallkontakt 2
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub ice_contact2: String,
 
     /// Mitgliedsnummer
@@ -99,23 +135,33 @@ pub struct User {
     #[serde(rename = "memberend")]
     pub member_end: String,
     /// Mitgliedsstatus
-    #[serde(rename = "memberstatus")]
+    #[serde(
+        rename = "memberstatus",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub member_status: String,
 
     /// Briefanrede
-    #[serde(rename = "lettertitle")]
+    #[serde(
+        rename = "lettertitle",
+        deserialize_with = "crate::utils::serde::unescape"
+    )]
     pub letter_title: String,
     /// Rundmailempfänger
     pub mailrecipient: String,
 
     /// Nicht beendete Lehrpläne
+    #[serde(deserialize_with = "crate::utils::serde::unescape_vec")]
     pub educations: Vec<String>,
 
     /// Zugeordnete Rollen
+    #[serde(deserialize_with = "crate::utils::serde::unescape_vec")]
     pub roles: Vec<String>,
     /// Zugeordnete Sparten
+    #[serde(deserialize_with = "crate::utils::serde::unescape_vec")]
     pub sector: Vec<String>,
     /// Zugeordnete Funktionen
+    #[serde(deserialize_with = "crate::utils::serde::unescape_vec")]
     pub functions: Vec<String>,
 
     /// Liste der zugeordneten Schlüssel
@@ -124,7 +170,8 @@ pub struct User {
 
 #[derive(Debug, serde::Deserialize)]
 pub struct Key {
+    #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub title: String,
-    #[serde(rename = "keyname")]
+    #[serde(rename = "keyname", deserialize_with = "crate::utils::serde::unescape")]
     pub name: String,
 }

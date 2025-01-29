@@ -2,6 +2,7 @@ mod article;
 mod md5;
 mod sale;
 mod user;
+mod utils;
 
 pub use article::{list_articles, Article};
 use md5::serialize_md5;
