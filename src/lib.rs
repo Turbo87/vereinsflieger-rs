@@ -33,6 +33,24 @@ pub async fn get_access_token(client: &reqwest::Client) -> anyhow::Result<String
     Ok(response.json::<Response>().await?.access_token)
 }
 
+pub async fn authenticate(
+    client: &reqwest::Client,
+    access_token: &str,
+    credentials: &Credentials<'_>,
+) -> anyhow::Result<()> {
+    let params = WithAccessToken::new(access_token, credentials);
+
+    client
+        .post("https://www.vereinsflieger.de/interface/rest/auth/signin")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(serde_urlencoded::to_string(params).unwrap())
+        .send()
+        .await?
+        .error_for_status()?;
+
+    Ok(())
+}
+
 pub struct Client<S: AuthenticationState> {
     #[allow(dead_code)]
     client: reqwest::Client,
@@ -68,21 +86,13 @@ impl Client<AccessToken> {
         self,
         params: &Credentials<'_>,
     ) -> anyhow::Result<Client<Authenticated>> {
-        let params = WithAccessToken {
-            access_token: self.access_token(),
-            params,
-        };
-
-        self.client
-            .post("https://www.vereinsflieger.de/interface/rest/auth/signin")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(serde_urlencoded::to_string(params).unwrap())
-            .send()
-            .await?
-            .error_for_status()?;
-
         let client = self.client;
-        let state = Authenticated(self.state);
+        let state = self.state;
+
+        let access_token = &state.0;
+        authenticate(&client, access_token, params).await?;
+
+        let state = Authenticated(state);
         Ok(Client { client, state })
     }
 }
