@@ -1,6 +1,6 @@
 [package]
 name = "vereinsflieger"
-version = "0.3.0"
+version = "0.4.0"
 description = "A Vereinsflieger API client for Rust based on the `reqwest` crate"
 edition = "2021"
 license = "MIT OR Apache-2.0"
