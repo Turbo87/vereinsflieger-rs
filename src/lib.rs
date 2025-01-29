@@ -96,10 +96,7 @@ impl Client<Authenticated> {
     }
 
     fn with_access_token<'a, T>(&'a self, params: &'a T) -> WithAccessToken<'a, T> {
-        WithAccessToken {
-            access_token: self.access_token(),
-            params,
-        }
+        WithAccessToken::new(self.access_token(), params)
     }
 
     pub async fn list_users(&self) -> anyhow::Result<Vec<User>> {
@@ -168,6 +165,15 @@ struct WithAccessToken<'a, T> {
 
     #[serde(flatten)]
     params: &'a T,
+}
+
+impl<'a, T> WithAccessToken<'a, T> {
+    pub fn new(access_token: &'a str, params: &'a T) -> Self {
+        Self {
+            access_token,
+            params,
+        }
+    }
 }
 
 #[derive(serde::Serialize)]
