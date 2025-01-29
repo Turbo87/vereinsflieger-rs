@@ -110,10 +110,6 @@ impl Client<Authenticated> {
         &self.state.0 .0
     }
 
-    fn with_access_token<'a, T>(&'a self, params: &'a T) -> WithAccessToken<'a, T> {
-        WithAccessToken::new(self.access_token(), params)
-    }
-
     pub async fn list_users(&self) -> anyhow::Result<Vec<User>> {
         list_users(&self.client, self.access_token()).await
     }
