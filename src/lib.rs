@@ -17,6 +17,22 @@ impl AuthenticationState for NoAccessToken {}
 impl AuthenticationState for AccessToken {}
 impl AuthenticationState for Authenticated {}
 
+pub async fn get_access_token(client: &reqwest::Client) -> anyhow::Result<String> {
+    #[derive(Debug, serde::Deserialize)]
+    struct Response {
+        #[serde(rename = "accesstoken")]
+        access_token: String,
+    }
+
+    let response = client
+        .get("https://www.vereinsflieger.de/interface/rest/auth/accesstoken")
+        .send()
+        .await?
+        .error_for_status()?;
+
+    Ok(response.json::<Response>().await?.access_token)
+}
+
 pub struct Client<S: AuthenticationState> {
     #[allow(dead_code)]
     client: reqwest::Client,
@@ -31,23 +47,11 @@ impl Client<NoAccessToken> {
     }
 
     async fn get_access_token(self) -> anyhow::Result<Client<AccessToken>> {
-        #[derive(Debug, serde::Deserialize)]
-        struct Response {
-            #[serde(rename = "accesstoken")]
-            access_token: String,
-        }
-
         let client = self.client;
-
-        let response = client
-            .get("https://www.vereinsflieger.de/interface/rest/auth/accesstoken")
-            .send()
-            .await?
-            .error_for_status()?;
-
-        let state = AccessToken(response.json::<Response>().await?.access_token);
-
-        Ok(Client { client, state })
+        get_access_token(&client).await.map(|access_token| {
+            let state = AccessToken(access_token);
+            Client { client, state }
+        })
     }
 }
 
