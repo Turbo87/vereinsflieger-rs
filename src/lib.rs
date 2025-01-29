@@ -6,6 +6,7 @@ mod user;
 pub use article::{list_articles, Article};
 use md5::serialize_md5;
 pub use sale::{add_sale, NewSale};
+use std::fmt::{Debug, Formatter};
 pub use user::{list_users, User};
 
 pub struct NoAccessToken;
@@ -166,4 +167,16 @@ pub struct Credentials<'a> {
 
     /// Zwei-Faktor-Authentifizierung
     pub auth_secret: Option<&'a str>,
+}
+
+impl Debug for Credentials<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Credentials")
+            .field("club_id", &self.club_id)
+            .field("app_key", &self.app_key)
+            .field("username", &self.username)
+            .field("password", &"********")
+            .field("auth_secret", &"********")
+            .finish()
+    }
 }
