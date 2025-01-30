@@ -10,7 +10,7 @@ exclude = ["docs/*", "examples/*", ".gitignore"]
 [dependencies]
 html-escape = "0.2.13"
 md-5 = "0.10.6"
-reqwest = { version = "0.12.12", features = ["json"] }
+reqwest = { version = "0.12.12", default-features = false, features = ["json"] }
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = { version = "1.0.135", features = ["preserve_order"] }
 serde_path_to_error = "0.1.16"
@@ -20,6 +20,7 @@ thiserror = "2.0.11"
 [dev-dependencies]
 anyhow = "=1.0.95"
 clap = { version = "=4.5.26", features = ["derive"] }
+reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls"] }
 tokio = { version = "=1.43.0", features = ["full"] }
 
 [package.metadata.release]
