@@ -5,12 +5,12 @@ mod sale;
 mod user;
 mod utils;
 
-pub use article::{list_articles, Article};
+pub use article::{list_articles, Article, Price};
 pub use error::{Error, Result};
 use md5::serialize_md5;
 pub use sale::{add_sale, NewSale};
 use std::fmt::{Debug, Formatter};
-pub use user::{list_users, User};
+pub use user::{list_users, Key, User};
 
 pub struct NoAccessToken;
 pub struct AccessToken(String);
