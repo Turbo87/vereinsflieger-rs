@@ -35,9 +35,13 @@ pub struct Article {
     )]
     pub article_id: String,
 
-    /// Artikelbeschreibung
+    /// Artikelbezeichnung
     #[serde(deserialize_with = "crate::utils::serde::unescape")]
     pub designation: String,
+
+    /// Artikelbeschreibung
+    #[serde(default, deserialize_with = "crate::utils::serde::unescape")]
+    pub description: String,
 
     /// Artikeleinheit
     #[serde(
