@@ -22,15 +22,15 @@ async fn main() -> anyhow::Result<()> {
     use clap::Parser;
     let args = Args::parse();
 
-    let params = vereinsflieger::Credentials {
+    let credentials = vereinsflieger::Credentials {
         club_id: Some(args.club_id),
-        username: &args.username,
-        password: &args.password,
-        app_key: &args.app_key,
+        username: args.username,
+        password: args.password,
+        app_key: args.app_key,
         auth_secret: None,
     };
 
-    let client = vereinsflieger::Client::new(&params).await?;
+    let client = vereinsflieger::Client::new(credentials);
 
     for user in client.list_users().await? {
         println!(
