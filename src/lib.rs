@@ -1,25 +1,18 @@
 mod article;
+mod client;
 mod error;
 mod md5;
 mod sale;
 mod user;
 mod utils;
 
+pub use crate::client::Client;
 pub use article::{list_articles, Article, Price};
 pub use error::{Error, Result};
 use md5::serialize_md5;
 pub use sale::{add_sale, NewSale};
 use std::fmt::{Debug, Formatter};
 pub use user::{list_users, Key, User};
-
-pub struct NoAccessToken;
-pub struct AccessToken(String);
-pub struct Authenticated(AccessToken);
-
-pub trait AuthenticationState {}
-impl AuthenticationState for NoAccessToken {}
-impl AuthenticationState for AccessToken {}
-impl AuthenticationState for Authenticated {}
 
 pub async fn get_access_token(client: &reqwest::Client) -> Result<String> {
     #[derive(Debug, serde::Deserialize)]
@@ -40,7 +33,7 @@ pub async fn get_access_token(client: &reqwest::Client) -> Result<String> {
 pub async fn authenticate(
     client: &reqwest::Client,
     access_token: &str,
-    credentials: &Credentials<'_>,
+    credentials: &Credentials,
 ) -> Result<()> {
     let params = WithAccessToken::new(access_token, credentials);
 
@@ -53,74 +46,6 @@ pub async fn authenticate(
         .error_for_status()?;
 
     Ok(())
-}
-
-pub struct Client<S: AuthenticationState> {
-    #[allow(dead_code)]
-    client: reqwest::Client,
-    state: S,
-}
-
-impl Client<NoAccessToken> {
-    fn new_without_access_token() -> Self {
-        let client = reqwest::Client::new();
-        let state = NoAccessToken;
-        Self { client, state }
-    }
-
-    async fn get_access_token(self) -> Result<Client<AccessToken>> {
-        let client = self.client;
-        get_access_token(&client).await.map(|access_token| {
-            let state = AccessToken(access_token);
-            Client { client, state }
-        })
-    }
-}
-
-impl Client<AccessToken> {
-    pub async fn new_unauthenticated() -> Result<Self> {
-        Client::new_without_access_token().get_access_token().await
-    }
-
-    pub fn access_token(&self) -> &str {
-        &self.state.0
-    }
-
-    pub async fn authenticate(self, params: &Credentials<'_>) -> Result<Client<Authenticated>> {
-        let client = self.client;
-        let state = self.state;
-
-        let access_token = &state.0;
-        authenticate(&client, access_token, params).await?;
-
-        let state = Authenticated(state);
-        Ok(Client { client, state })
-    }
-}
-
-impl Client<Authenticated> {
-    pub async fn new(params: &Credentials<'_>) -> Result<Self> {
-        Client::new_unauthenticated()
-            .await?
-            .authenticate(params)
-            .await
-    }
-
-    pub fn access_token(&self) -> &str {
-        &self.state.0 .0
-    }
-
-    pub async fn list_users(&self) -> Result<Vec<User>> {
-        list_users(&self.client, self.access_token()).await
-    }
-
-    pub async fn list_articles(&self) -> Result<Vec<Article>> {
-        list_articles(&self.client, self.access_token()).await
-    }
-
-    pub async fn add_sale(&self, new_sale: &NewSale<'_>) -> Result<()> {
-        add_sale(&self.client, self.access_token(), new_sale).await
-    }
 }
 
 #[derive(serde::Serialize)]
@@ -142,7 +67,7 @@ impl<'a, T> WithAccessToken<'a, T> {
 }
 
 #[derive(serde::Serialize)]
-pub struct Credentials<'a> {
+pub struct Credentials {
     /// Eindeutige Nummer des Vereins
     ///
     /// Hinweis: Die eindeutige cid wird nur benötigt, wenn der Benutzer in
@@ -152,20 +77,20 @@ pub struct Credentials<'a> {
 
     /// Eindeutiger Applikationsschlüssel
     #[serde(rename = "appkey")]
-    pub app_key: &'a str,
+    pub app_key: String,
 
     /// Benuztername oder E-Mail-Adresse
-    pub username: &'a str,
+    pub username: String,
 
     /// Passwort
     #[serde(serialize_with = "serialize_md5")]
-    pub password: &'a str,
+    pub password: String,
 
     /// Zwei-Faktor-Authentifizierung
-    pub auth_secret: Option<&'a str>,
+    pub auth_secret: Option<String>,
 }
 
-impl Debug for Credentials<'_> {
+impl Debug for Credentials {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Credentials")
             .field("club_id", &self.club_id)
